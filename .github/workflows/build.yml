@@ -1,0 +1,40 @@
+name: Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+
+      - name: Build Native
+        run: |
+          mkdir -p build/native
+          cd build/native
+          cmake -B build -S ../../src/main/cpp -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+
+      - name: Copy Native Libs
+        run: |
+          mkdir -p src/main/resources/META-INF/native/${{ matrix.os }}-${{ runner.arch }}
+          cp build/native/build/lib/* src/main/resources/META-INF/native/${{ matrix.os }}-${{ runner.arch }}
+
+      - name: Build JAR
+        run: ./gradlew jar
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mylibrary-${{ matrix.os }}
+          path: build/libs/*.jar

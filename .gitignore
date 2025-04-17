@@ -1,0 +1,35 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Compiled class file
+*.class
+
+# Log file
+logs/
+*.log
+
+# Intellij project files
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+*.gpg
+!vendor/*.tar.gz
+
+# Gradle
+.gradletasknamecache
+.gradle/
+build/
+out/
+!gradle/wrapper/*.jar
