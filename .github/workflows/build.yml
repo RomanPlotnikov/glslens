@@ -19,7 +19,7 @@ jobs:
           submodules: recursive
 
       - name: Cache CMake build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: src/main/native/build
           key: cmake-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt') }}
@@ -85,10 +85,11 @@ jobs:
           ls -R "$ARTIFACT_DIR"
 
       - name: Upload Native Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: native-${{ steps.os-name.outputs.os }}
-          path: target/native/${{ steps.os-name.outputs.os }}
+          name: native-${{ runner.os }}
+          path: ${{ github.workspace }}/target/native
+          retention-days: 1
 
   package-jar:
     needs: build-native
@@ -97,7 +98,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
