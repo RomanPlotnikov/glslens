@@ -1,10 +1,10 @@
-name: Build
+name: Build and Package
 
 on:
   push:
     branches: [ workflows-test ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build-native:
@@ -28,39 +28,51 @@ jobs:
         shell: bash
         run: |
           cd src/main/native
-          mkdir build
+          mkdir -p build
           cd build
-          cmake ..
-          cmake --build . --config Release
+          
+          # Выбор генератора для Windows
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            cmake -G "Visual Studio 17 2022" -A x64 ..
+            cmake --build . --config Release
+          else
+            cmake ..
+            cmake --build .
+          fi
 
-      - name: Determine OS Name
-        id: os-name
-        run: |
-          OS_NAME=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-          echo "os=$OS_NAME" >> $GITHUB_OUTPUT
-
-      - name: Copy Native Library
+      - name: Prepare Native Artifacts
         shell: bash
         run: |
-          mkdir -p target/native/${{ steps.os-name.outputs.os }}
           LIB_NAME="native"
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            LIB_EXT="dll"
-            LIB_PATH="src/main/native/build/Release/$LIB_NAME.$LIB_EXT"
-          elif [ "${{ runner.os }}" = "macOS" ]; then
-            LIB_EXT="dylib"
-            LIB_PATH="src/main/native/build/lib$LIB_NAME.$LIB_EXT"
-          else
-            LIB_EXT="so"
-            LIB_PATH="src/main/native/build/lib$LIB_NAME.$LIB_EXT"
-          fi
-          cp "$LIB_PATH" "target/native/${{ steps.os-name.outputs.os }}/"
+          ARTIFACT_DIR="target/native"
+
+          case "${{ runner.os }}" in
+            "Windows")
+              EXT="dll"
+              SRC_PATH="src/main/native/build/Release/$LIB_NAME.$EXT"
+              ;;
+            "macOS")
+              EXT="dylib"
+              SRC_PATH="src/main/native/build/lib$LIB_NAME.$EXT"
+              ;;
+            *)
+              EXT="so"
+              SRC_PATH="src/main/native/build/lib$LIB_NAME.$EXT"
+              ;;
+          esac
+
+          OS_DIR=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          mkdir -p "$ARTIFACT_DIR/$OS_DIR"
+          cp "$SRC_PATH" "$ARTIFACT_DIR/$OS_DIR/"
+          
+          # Для отладки: показать структуру папок
+          ls -R "$ARTIFACT_DIR"
 
       - name: Upload Native Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: native-${{ steps.os-name.outputs.os }}
-          path: target/native/${{ steps.os-name.outputs.os }}
+          name: native-${{ runner.os }}
+          path: target/native
 
   package-jar:
     needs: build-native
@@ -68,20 +80,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download All Artifacts
+      - name: Download Artifacts
         uses: actions/download-artifact@v3
         with:
           path: artifacts
 
-      - name: Combine Native Libraries
+      - name: Prepare Native Resources
         shell: bash
         run: |
           mkdir -p target/native
-          find artifacts -type d -name 'native-*' | while read dir; do
-            os=$(basename "$dir" | cut -d '-' -f2)
-            mkdir -p "target/native/$os"
-            cp -r "$dir"/* "target/native/$os/"
+          
+          # Копирование для каждой ОС
+          for os_dir in artifacts/native-*/; do
+            os=$(basename "$os_dir" | cut -d '-' -f2- | tr -d '}')
+            cp -R "$os_dir/native/$os" target/native/
           done
+          
+          # Проверка структуры
+          tree target/native
 
       - name: Set up JDK
         uses: actions/setup-java@v3
@@ -91,3 +107,9 @@ jobs:
 
       - name: Build JAR
         run: mvn package -DskipTests
+
+      - name: Upload JAR Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: application.jar
+          path: target/*.jar
