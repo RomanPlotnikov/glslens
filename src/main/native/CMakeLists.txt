@@ -17,12 +17,12 @@ option(ENABLE_PCH "Enables Precompiled header" OFF)
 add_subdirectory(third_party/glslang)
 
 set(HEADERS
-        src/jni/com_glslens_Glslens.h
+        src/jni/com_glslens_GLSLens.h
         src/wrappers/shader_program.h
         src/wrappers/uniform_info.h
 )
 set(SOURCES
-        src/jni/com_glslens_Glslens.cpp
+        src/jni/com_glslens_GLSLens.cpp
         src/wrappers/shader_program.cpp
         src/wrappers/uniform_info.cpp
 )
