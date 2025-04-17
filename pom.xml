@@ -1,0 +1,8 @@
+<build>
+    <resources>
+        <resource>
+            <directory>target/native</directory>
+            <targetPath>native</targetPath>
+        </resource>
+    </resources>
+</build>
