@@ -12,10 +12,19 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Cache CMake build
+        uses: actions/cache@v3
+        with:
+          path: src/main/native/build
+          key: cmake-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            cmake-${{ runner.os }}-
 
       - name: Set up JDK
         uses: actions/setup-java@v3
@@ -25,6 +34,11 @@ jobs:
 
       - name: Install CMake
         uses: lukka/get-cmake@latest
+        with:
+          disable-cache: true 
+
+      - name: Clean build directory
+        run: rm -rf src/main/native/build
 
       - name: Build Native Library
         shell: bash
@@ -69,6 +83,12 @@ jobs:
           
           # Для отладки: показать структуру папок
           ls -R "$ARTIFACT_DIR"
+
+      - name: Upload Native Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: native-${{ steps.os-name.outputs.os }}
+          path: target/native/${{ steps.os-name.outputs.os }}
 
   package-jar:
     needs: build-native
