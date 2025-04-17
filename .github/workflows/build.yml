@@ -107,9 +107,3 @@ jobs:
 
       - name: Build JAR
         run: mvn package -DskipTests
-
-      - name: Upload JAR Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: application.jar
-          path: target/*.jar
