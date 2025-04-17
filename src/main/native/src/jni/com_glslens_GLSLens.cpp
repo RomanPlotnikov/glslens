@@ -14,6 +14,8 @@
 
 #include "com_glslens_GLSLens.h"
 
+#include <stdexcept>
+
 #include "wrappers/shader_program.h"
 
 extern "C" {
