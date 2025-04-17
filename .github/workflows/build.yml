@@ -45,7 +45,7 @@ jobs:
       - name: Prepare Native Artifacts
         shell: bash
         run: |
-          LIB_NAME="native"
+          LIB_NAME="glslens"
           ARTIFACT_DIR="target/native"
 
           case "${{ runner.os }}" in
