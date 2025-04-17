@@ -68,12 +68,6 @@ jobs:
           # Для отладки: показать структуру папок
           ls -R "$ARTIFACT_DIR"
 
-      - name: Upload Native Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: native-${{ runner.os }}
-          path: target/native
-
   package-jar:
     needs: build-native
     runs-on: ubuntu-latest
