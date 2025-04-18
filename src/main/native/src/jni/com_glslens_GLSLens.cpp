@@ -31,10 +31,10 @@ JNIEXPORT jobjectArray JNICALL Java_com_glslens_GLSLens_getLiveUniformsInfo(
 
     jclass javaClass = env->FindClass("glslang/TObjectReflection");
     jmethodID constructor = env->GetMethodID(javaClass, "<init>",
-                                             "(Ljava/lang/String;IIIIIIIIII)V");
+                                             "(Ljava/lang/String;IIIIIIIII)V");
 
     const jsize uniformsCount = program.getLiveUniformsCount();
-    jobjectArray jarray =
+    jobjectArray javaArray =
         env->NewObjectArray(uniformsCount, javaClass, nullptr);
     for (jsize index = 0; index < uniformsCount; index++) {
       const auto &uniform = program.getUniform(index);
@@ -45,13 +45,13 @@ JNIEXPORT jobjectArray JNICALL Java_com_glslens_GLSLens_getLiveUniformsInfo(
           uniform.arrayStride, uniform.topLevelArraySize,
           uniform.topLevelArrayStride);
 
-      env->SetObjectArrayElement(jarray, index, javaObject);
+      env->SetObjectArrayElement(javaArray, index, javaObject);
 
       env->DeleteLocalRef(name);
       env->DeleteLocalRef(javaObject);
     }
 
-    return jarray;
+    return javaArray;
   } catch (const std::runtime_error &error) {
     env->ReleaseStringUTFChars(source, pShaderSource);
 
