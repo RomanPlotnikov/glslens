@@ -1,0 +1,166 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-native:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: src/main/native/build
+          key: cmake-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            cmake-${{ runner.os }}-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install CMake and dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install cmake
+          sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+
+      - name: Clean build directory
+        shell: bash
+        run: rm -rf src/main/native/build
+
+      - name: Build Native Library
+        shell: bash
+        run: |
+          cd src/main/native
+          mkdir -p build
+          cd build
+
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            cmake -G "Visual Studio 17 2022" -A x64 ..
+            cmake --build . --config Release
+          elif [ "${{ runner.os }}" = "macOS" ]; then
+            # Build for both architectures
+            archs=("x86_64" "arm64")
+            for arch in "${archs[@]}"; do
+              mkdir -p "build-$arch"
+              pushd "build-$arch"
+              cmake -DCMAKE_OSX_ARCHITECTURES=$arch ../..
+              cmake --build .
+              popd
+            done
+            
+            # Create universal binary
+            lipo -create -output libglslens.dylib \
+              build-x86_64/libglslens.dylib \
+              build-arm64/libglslens.dylib
+            
+            # Verify architectures
+            file libglslens.dylib
+            lipo -archs libglslens.dylib
+          else
+            cmake ..
+            cmake --build .
+          fi
+
+      - name: Prepare Native Artifacts
+        shell: bash
+        run: |
+          LIB_NAME="glslens"
+          ARTIFACT_DIR="target/native"
+
+          case "${{ runner.os }}" in
+            "Windows")
+              EXT="dll"
+              SRC_PATH="src/main/native/build/Release/$LIB_NAME.$EXT"
+              ;;
+            "macOS")
+              EXT="dylib"
+              SRC_PATH="src/main/native/build/lib$LIB_NAME.$EXT"
+              ;;
+            *)
+              EXT="so"
+              SRC_PATH="src/main/native/build/lib$LIB_NAME.$EXT"
+              ;;
+          esac
+
+          OS_DIR=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          mkdir -p "$ARTIFACT_DIR/$OS_DIR"
+          cp "$SRC_PATH" "$ARTIFACT_DIR/$OS_DIR/"
+          
+          # Для отладки: показать структуру папок
+          ls -R "$ARTIFACT_DIR"
+
+      - name: Upload Native Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ runner.os }}
+          path: ${{ github.workspace }}/target/native
+          retention-days: 1
+
+  package-jar:
+    needs: build-native
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare Native Resources
+        shell: bash
+        run: |
+          mkdir -p target/native
+          
+          echo "Artifacts structure:"
+          ls -R artifacts
+
+          for os_dir in artifacts/native-*/; do
+            os_name=$(basename "$os_dir" | cut -d '-' -f2 | tr '[:upper:]' '[:lower:]')
+            echo "Processing OS: $os_name"
+          
+            src_path="$os_dir/$os_name"
+          
+            if [ -d "$src_path" ]; then
+              echo "Copying from: $src_path"
+              mkdir -p "target/native/$os_name"
+              cp -v "$src_path"/* "target/native/$os_name/"
+            else
+              echo "ERROR: Directory $src_path not found!"
+              exit 1
+            fi
+          done
+
+          echo "Final native structure:"
+          tree target/native
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build JAR
+        run: mvn package -DskipTests
+
+      - name: Upload JAR Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: glslens.jar
+          path: target/*.jar
