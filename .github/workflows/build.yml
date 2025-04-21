@@ -83,6 +83,22 @@ jobs:
         with:
           arch: x64
 
+      - name: Tree-like directory structure
+        run: |
+          function Show-Tree {
+              param([string]$Path = '.', [int]$Level = 0)
+              $items = Get-ChildItem -LiteralPath $Path
+              foreach ($item in $items) {
+                  $prefix = ' ' * ($Level * 2)
+                  Write-Host "$prefix- $($item.Name)"
+                  if ($item.PSIsContainer) {
+                      Show-Tree -Path $item.FullName -Level ($Level + 1)
+                  }
+              }
+          }
+          Show-Tree
+        shell: pwsh
+
       - name: Verify DLL Dependencies (Windows)
         if: runner.os == 'Windows'
         shell: cmd
