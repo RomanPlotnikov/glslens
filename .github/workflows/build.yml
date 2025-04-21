@@ -79,7 +79,7 @@ jobs:
 
       - name: Check DLL Dependencies (Windows)
         if: runner.os == 'Windows'
-        shell: bash
+        shell: cmd
         run: |
            cd src/main/native/build/Release
            dumpbin /dependents native.dll > dependencies.txt
