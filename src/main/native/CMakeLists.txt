@@ -1,4 +1,10 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
+
+if(MSVC)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        message("statics")
+endif()
+
 project(glslens VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -24,12 +30,7 @@ set(SOURCES
         src/jni/com_glslens_GLSLens.cpp
         src/wrappers/shader_program.cpp
 )
-
-if(MSVC)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    message("statics")
-endif()
-
+message(STATUS "Runtime library: ${CMAKE_MSVC_RUNTIME_LIBRARY}")
 add_library(glslens SHARED ${SOURCES} ${HEADERS})
 
 target_include_directories(glslens PRIVATE
@@ -41,3 +42,4 @@ target_link_libraries(glslens PRIVATE
         ${JNI_LIBRARIES}
         glslang
 )
+message(STATUS "Runtime library: ${CMAKE_MSVC_RUNTIME_LIBRARY}")
