@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 3.15)
 
-if(MSVC)
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-        message("statics")
-endif()
-
 project(glslens VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED)
 
 find_package(JNI REQUIRED)
+
+if(MSVC)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        message("statics")
+endif()
 
 option(BUILD_EXTERNAL "Build external dependencies in /External" OFF)
 option(GLSLANG_TESTS "Enable glslang testing" OFF)
