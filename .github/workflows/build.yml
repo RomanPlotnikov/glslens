@@ -77,6 +77,11 @@ jobs:
             cmake --build .
           fi
 
+      - name: Setup MSVC environment
+        uses: ilammy/setup-msvc@v1
+        with:
+          arch: x64
+
       - name: Check DLL Dependencies (Windows)
         if: runner.os == 'Windows'
         shell: cmd
