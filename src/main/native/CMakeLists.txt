@@ -25,6 +25,10 @@ set(SOURCES
         src/wrappers/shader_program.cpp
 )
 
+if(MSVC)
+      set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")  
+endif(MSVC)
+
 add_library(glslens SHARED ${SOURCES} ${HEADERS})
 
 target_include_directories(glslens PRIVATE

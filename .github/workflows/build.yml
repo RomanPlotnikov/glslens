@@ -83,13 +83,15 @@ jobs:
         with:
           arch: x64
 
-      - name: Check DLL Dependencies (Windows)
+      - name: Verify DLL Dependencies (Windows)
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-           cd src/main/native/build/Release
-           dumpbin /dependents native.dll > dependencies.txt
-           cat dependencies.txt
+            where dumpbin || echo "ERROR: dumpbin not found. Install Visual Studio Build Tools"
+            call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+            dumpbin /dependents target\native\windows\libglslens.dll
+            dumpbin /dependents target\native\windows\libglslens.dll | findstr /C:"msvcp140.dll" && exit 1 || exit 0
+        working-directory: ${{ github.workspace }}
 
       - name: Prepare Native Artifacts
         shell: bash
