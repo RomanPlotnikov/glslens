@@ -51,7 +51,7 @@ jobs:
           cd build
 
           if [ "${{ runner.os }}" = "Windows" ]; then
-            cmake -G "Visual Studio 17 2022" -A x64 ..
+            cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Release>:Release>" ..
             cmake --build . --config Release
           elif [ "${{ runner.os }}" = "macOS" ]; then
             # Build for both architectures
@@ -76,6 +76,14 @@ jobs:
             cmake ..
             cmake --build .
           fi
+
+      - name: Check DLL Dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+           cd src/main/native/build/Release
+           dumpbin /dependents native.dll > dependencies.txt
+           cat dependencies.txt
 
       - name: Prepare Native Artifacts
         shell: bash
