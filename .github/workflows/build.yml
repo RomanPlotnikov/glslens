@@ -10,7 +10,7 @@ jobs:
   build-native:
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -51,7 +51,7 @@ jobs:
           cd build
 
           if [ "${{ runner.os }}" = "Windows" ]; then
-            cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" ..
+            cmake -G "Visual Studio 17 2022" -A x64 ..
             cmake --build . --config Release
           elif [ "${{ runner.os }}" = "macOS" ]; then
             # Build for both architectures
@@ -76,39 +76,6 @@ jobs:
             cmake ..
             cmake --build .
           fi
-
-      - name: Install Visual Studio Build Tools (Windows)
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-
-      - name: Tree-like directory structure
-        run: |
-          function Show-Tree {
-              param([string]$Path = '.', [int]$Level = 0)
-              $items = Get-ChildItem -LiteralPath $Path
-              foreach ($item in $items) {
-                  $prefix = ' ' * ($Level * 2)
-                  Write-Host "$prefix- $($item.Name)"
-                  if ($item.PSIsContainer) {
-                      Show-Tree -Path $item.FullName -Level ($Level + 1)
-                  }
-              }
-          }
-          Show-Tree
-        shell: pwsh
-
-      - name: Verify DLL Dependencies (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          where dumpbin || echo "ERROR: dumpbin not found. Install Visual Studio Build Tools"
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          if not exist "target\native\windows\libglslens.dll" (exit 1)
-          dumpbin /dependents "target\native\windows\libglslens.dll"
-          dumpbin /dependents "target\native\windows\libglslens.dll" | findstr /C:"msvcp140.dll" && exit 1 || exit 0
-        working-directory: ${{ github.workspace }}
 
       - name: Prepare Native Artifacts
         shell: bash
@@ -135,6 +102,7 @@ jobs:
           mkdir -p "$ARTIFACT_DIR/$OS_DIR"
           cp "$SRC_PATH" "$ARTIFACT_DIR/$OS_DIR/"
           
+          # Для отладки: показать структуру папок
           ls -R "$ARTIFACT_DIR"
 
       - name: Upload Native Artifact

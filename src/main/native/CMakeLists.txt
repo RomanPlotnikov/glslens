@@ -26,8 +26,8 @@ set(SOURCES
 )
 
 if(MSVC)
-      set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")  
-endif(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 add_library(glslens SHARED ${SOURCES} ${HEADERS})
 
