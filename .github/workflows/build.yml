@@ -87,11 +87,20 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-            where dumpbin || echo "ERROR: dumpbin not found. Install Visual Studio Build Tools"
-            call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-            dumpbin /dependents target\native\windows\libglslens.dll
-            dumpbin /dependents target\native\windows\libglslens.dll | findstr /C:"msvcp140.dll" && exit 1 || exit 0
-        working-directory: ${{ github.workspace }}
+          where dumpbin || echo "ERROR: dumpbin not found. Install Visual Studio Build Tools"
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+    
+          if not exist "src\main\native\build\Release\libglslens.dll" (
+            echo "ERROR: libglslens.dll not found!"
+            exit 1
+          )
+    
+          echo "Current directory: %CD%"
+          dir "src\main\native\build\Release\"
+    
+          dumpbin /dependents "src\main\native\build\Release\libglslens.dll"
+          dumpbin /dependents "src\main\native\build\Release\libglslens.dll" | findstr /C:"msvcp140.dll" && exit 1 || exit 0
+          working-directory: ${{ github.workspace }}
 
       - name: Prepare Native Artifacts
         shell: bash
