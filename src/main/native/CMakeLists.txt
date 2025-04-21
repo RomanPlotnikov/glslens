@@ -9,7 +9,6 @@ find_package(JNI REQUIRED)
 
 if(MSVC)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-        message("statics")
 endif()
 
 option(BUILD_EXTERNAL "Build external dependencies in /External" OFF)
@@ -30,7 +29,7 @@ set(SOURCES
         src/jni/com_glslens_GLSLens.cpp
         src/wrappers/shader_program.cpp
 )
-message(STATUS "Runtime library: ${CMAKE_MSVC_RUNTIME_LIBRARY}")
+
 add_library(glslens SHARED ${SOURCES} ${HEADERS})
 
 target_include_directories(glslens PRIVATE
@@ -42,4 +41,3 @@ target_link_libraries(glslens PRIVATE
         ${JNI_LIBRARIES}
         glslang
 )
-message(STATUS "Runtime library: ${CMAKE_MSVC_RUNTIME_LIBRARY}")
