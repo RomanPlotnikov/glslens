@@ -18,16 +18,23 @@
 
 #include "wrappers/shader_program.h"
 
+#include <iostream>
+
 extern "C" {
 JNIEXPORT jobjectArray JNICALL Java_com_glslens_GLSLens_getLiveUniformsInfo(
     JNIEnv *env, jobject, jstring source, jint version, jint stage) {
+  std::cout << "[INFO] call Java_com_glslens_GLSLens_getLiveUniformsInfo"
+            << std::endl;
   const char *pShaderSource = env->GetStringUTFChars(source, nullptr);
 
   try {
+    std::cout << "[INFO] create new shader program" << std::endl;
     ShaderProgram program(pShaderSource, version,
                           static_cast<EShLanguage>(stage));
-
+    std::cout << "[INFO] release pShaderSource" << std::endl;
     env->ReleaseStringUTFChars(source, pShaderSource);
+    pShaderSource = nullptr;
+
     jclass javaClass = env->FindClass("glslang/TObjectReflection");
     jmethodID constructor =
         env->GetMethodID(javaClass, "<init>", "(Ljava/lang/String;IIIIIIIII)V");
@@ -36,6 +43,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_glslens_GLSLens_getLiveUniformsInfo(
     jobjectArray javaArray =
         env->NewObjectArray(uniformsCount, javaClass, nullptr);
     for (jsize index = 0; index < uniformsCount; index++) {
+      std::cout << "[INFO] get uniform" << std::endl;
       const auto &uniform = program.getUniform(index);
       jstring name = env->NewStringUTF(uniform.name.c_str());
       jobject javaObject = env->NewObject(
@@ -45,15 +53,17 @@ JNIEXPORT jobjectArray JNICALL Java_com_glslens_GLSLens_getLiveUniformsInfo(
           uniform.topLevelArrayStride);
 
       env->SetObjectArrayElement(javaArray, index, javaObject);
-
+      std::cout << "[INFO] delete refs" << std::endl;
       env->DeleteLocalRef(name);
       env->DeleteLocalRef(javaObject);
     }
 
     return javaArray;
   } catch (const std::exception &error) {
+    std::cout << "[INFO] exception" << std::endl;
     if (pShaderSource != nullptr) {
       env->ReleaseStringUTFChars(source, pShaderSource);
+      pShaderSource = nullptr;
     }
 
     jclass exceptionClass = env->FindClass("java/lang/RuntimeException");
@@ -65,10 +75,12 @@ JNIEXPORT jobjectArray JNICALL Java_com_glslens_GLSLens_getLiveUniformsInfo(
 JNIEXPORT void JNICALL Java_com_glslens_GLSLens_initializeProcess(JNIEnv *,
                                                                   jobject) {
   glslang::InitializeProcess();
+  std::cout << "[INFO] glslang initialized" << std::endl;
 }
 
 JNIEXPORT void JNICALL Java_com_glslens_GLSLens_finalizeProcess(JNIEnv *,
                                                                 jobject) {
   glslang::FinalizeProcess();
+  std::cout << "[INFO] glslang finalized" << std::endl;
 }
 }
