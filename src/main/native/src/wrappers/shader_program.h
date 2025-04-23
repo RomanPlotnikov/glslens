@@ -39,7 +39,7 @@ public:
   /// @param index zero-based index of the uniform variable (must be in
   ///              [0, getLiveUniformsCount() - 1] range).
   /// @return object with reflection data for the requested uniform variable.
-  [[nodiscard]] glslang::TObjectReflection getUniform(int index) const;
+  [[nodiscard]] const glslang::TObjectReflection &getUniform(int index) const;
 
   /// @brief Gets total count of active uniform variables in the shader.
   ///

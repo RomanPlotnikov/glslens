@@ -45,7 +45,8 @@ ShaderProgram::ShaderProgram(const std::string &source, const int version,
   }
 }
 
-glslang::TObjectReflection ShaderProgram::getUniform(const int index) const {
+const glslang::TObjectReflection &
+ShaderProgram::getUniform(const int index) const {
   return program.getUniform(index);
 }
 

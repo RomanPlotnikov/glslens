@@ -23,11 +23,14 @@ JNIEXPORT jobjectArray JNICALL Java_com_glslens_GLSLens_getLiveUniformsInfo(
     JNIEnv *env, jobject, jstring source, jint version, jint stage) {
   const char *pShaderSource = env->GetStringUTFChars(source, nullptr);
 
+  auto deleter = [env, source](const char* ptr) { 
+    env->ReleaseStringUTFChars(source, ptr); 
+  };
+  std::unique_ptr<const char[], decltype(deleter)> guard(pShaderSource, deleter);
+
   try {
     ShaderProgram program(pShaderSource, version,
                           static_cast<EShLanguage>(stage));
-
-    env->ReleaseStringUTFChars(source, pShaderSource);
 
     jclass javaClass = env->FindClass("glslang/TObjectReflection");
     jmethodID constructor = env->GetMethodID(javaClass, "<init>",
@@ -52,9 +55,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_glslens_GLSLens_getLiveUniformsInfo(
     }
 
     return javaArray;
-  } catch (const std::runtime_error &error) {
-    env->ReleaseStringUTFChars(source, pShaderSource);
-
+  } catch (const std::exception &error) {
     jclass exceptionClass = env->FindClass("java/lang/RuntimeException");
     env->ThrowNew(exceptionClass, error.what());
     return nullptr;
